@@ -184,6 +184,8 @@ jobs:
       - name: Setup Rust cache
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6  # v2
         with:
+          prefix-key: v0-rust-nobin
+          cache-bin: false
           shared-key: ${{ runner.os }}-pureRust-test
           save-if: ${{ github.ref == 'refs/heads/main' }}
 
@@ -264,6 +266,8 @@ jobs:
       - name: Setup Rust cache
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6  # v2
         with:
+          prefix-key: v0-rust-nobin
+          cache-bin: false
           shared-key: ${{ runner.os }}-pureRust-shm
           save-if: ${{ github.ref == 'refs/heads/main' }}
 
@@ -328,6 +332,8 @@ jobs:
       - name: Setup Rust cache
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6  # v2
         with:
+          prefix-key: v0-rust-nobin
+          cache-bin: false
           shared-key: ubuntu-latest-coverage
           save-if: ${{ github.ref == 'refs/heads/main' }}
 
@@ -442,6 +448,8 @@ jobs:
       - name: Setup Rust cache
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6  # v2
         with:
+          prefix-key: v0-rust-nobin
+          cache-bin: false
           shared-key: ${{ runner.os }}-pureRust-checks-v2
           save-if: ${{ github.ref == 'refs/heads/main' }}
 
@@ -570,6 +578,8 @@ jobs:
       - name: Setup Rust cache
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6  # v2
         with:
+          prefix-key: v0-rust-nobin
+          cache-bin: false
           shared-key: ubuntu-latest-hu-aarch64-cross
           save-if: ${{ github.ref == 'refs/heads/main' }}
 
@@ -623,6 +633,8 @@ jobs:
       - name: Setup Rust cache
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6  # v2
         with:
+          prefix-key: v0-rust-nobin
+          cache-bin: false
           shared-key: ubuntu-latest-hu-docs-repro
           save-if: ${{ github.ref == 'refs/heads/main' }}
 
@@ -738,6 +750,8 @@ jobs:
       - name: Setup Rust cache
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6  # v2
         with:
+          prefix-key: v0-rust-nobin
+          cache-bin: false
           shared-key: ubuntu-latest-wasm-plugin-tests
           save-if: ${{ github.ref == 'refs/heads/main' }}
 
@@ -794,6 +808,8 @@ jobs:
       - name: Setup Rust cache
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6  # v2
         with:
+          prefix-key: v0-rust-nobin
+          cache-bin: false
           shared-key: ubuntu-latest-python-stubs
           save-if: ${{ github.ref == 'refs/heads/main' }}
 
@@ -853,6 +869,8 @@ jobs:
       - name: Setup Rust cache
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6  # v2
         with:
+          prefix-key: v0-rust-nobin
+          cache-bin: false
           shared-key: ubuntu-latest-ffi-header
           save-if: ${{ github.ref == 'refs/heads/main' }}
 
@@ -890,6 +908,8 @@ jobs:
       - name: Setup Rust cache
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6  # v2
         with:
+          prefix-key: v0-rust-nobin
+          cache-bin: false
           shared-key: ${{ runner.os }}-go-ffi
           save-if: ${{ github.ref == 'refs/heads/main' }}
 
@@ -975,6 +995,8 @@ jobs:
       - name: Setup Rust cache
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6  # v2
         with:
+          prefix-key: v0-rust-nobin
+          cache-bin: false
           shared-key: ${{ matrix.distro }}-python
           save-if: ${{ github.ref == 'refs/heads/main' }}
 
@@ -1097,6 +1119,8 @@ jobs:
       - name: Setup Rust cache
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6  # v2
         with:
+          prefix-key: v0-rust-nobin
+          cache-bin: false
           shared-key: ${{ matrix.distro }}-ros-v2
           save-if: ${{ github.ref == 'refs/heads/main' }}
 

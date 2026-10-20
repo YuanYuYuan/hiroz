@@ -243,6 +243,8 @@ jobs:
       - name: Setup Rust cache
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6  # v2
         with:
+          prefix-key: v0-rust-nobin
+          cache-bin: false
           # -v2 discards entries saved while the shared cache above was in use.
           shared-key: ${{ matrix.distro }}-interop-v2
           save-if: ${{ github.ref == 'refs/heads/main' }}
