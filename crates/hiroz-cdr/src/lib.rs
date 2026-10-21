@@ -1,3 +1,4 @@
+// comment-only change for a cache measurement
 //! CDR (Common Data Representation) serialization for hiroz.
 //!
 //! This crate provides CDR serialization and deserialization compatible with
