@@ -393,7 +393,7 @@
               rosEnvPaths = rosEnv.testFullPaths;
               pythonVersion = pythonVer;
               rosDistro = rosDistro;
-              extraShellHook = '''';
+              extraShellHook = "";
             };
           };
 
@@ -438,9 +438,42 @@
       in
       {
         # Pre-commit checks
-        checks = {
-          inherit pre-commit-check;
-        };
+        checks =
+          let
+            craneCommon = {
+              pname = "hiroz-ws";
+              version = "0.2.0";
+              # cleanSource, minus .github, so a workflow edit does not change the
+              # source hash of the checks.
+              src = pkgs.lib.cleanSourceWith {
+                src = ./.;
+                filter =
+                  path: type: pkgs.lib.cleanSourceFilter path type && !(pkgs.lib.hasInfix "/.github" (toString path));
+              };
+              strictDeps = true;
+              nativeBuildInputs = [
+                pkgs.pkg-config
+                pkgs.protobuf
+              ];
+              # The CI jobs compile the dev profile; crane defaults to release.
+              CARGO_PROFILE = "dev";
+            };
+            craneWs = craneCommon // {
+              cargoExtraArgs = "--locked --workspace --exclude rmw-zenoh-rs --exclude hiroz-py --exclude hiroz-tests";
+            };
+            craneHu = craneCommon // {
+              cargoExtraArgs = "--locked -p hiroz-union --features web-plugins";
+            };
+            craneWsDeps = craneLib.buildDepsOnly craneWs;
+            craneHuDeps = craneLib.buildDepsOnly craneHu;
+          in
+          {
+            inherit pre-commit-check;
+            crane-deps-ws = craneWsDeps;
+            crane-deps-hu = craneHuDeps;
+            crane-clippy-ws = craneLib.cargoClippy (craneWs // { cargoArtifacts = craneWsDeps; });
+            crane-clippy-hu = craneLib.cargoClippy (craneHu // { cargoArtifacts = craneHuDeps; });
+          };
 
         # Development shells
         devShells = {
@@ -508,7 +541,7 @@
               ++ pythonTools
               ++ docTools
               ++ testTools;
-            extraShellHook = '''';
+            extraShellHook = "";
           };
 
           # Cross-compilation shell for the aarch64-unknown-linux-gnu leg of
@@ -544,7 +577,7 @@
             ]
             ++ (builtins.filter (p: p != rustToolchain) commonBuildInputs)
             ++ testTools;
-            extraShellHook = '''';
+            extraShellHook = "";
           };
 
           # Bridge interop test environment (Jazzy + Humble side-by-side).

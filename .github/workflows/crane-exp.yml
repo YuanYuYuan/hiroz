@@ -1,0 +1,201 @@
+name: crane-exp
+
+# Fork-only cache experiment. Compares the macOS checks job with and without
+# crane, one macOS job at a time. Not part of the repository's CI.
+
+on:
+  push:
+    branches: ["ci-exp/crane-base", "ci-exp/crane-smoke"]
+  pull_request:
+    branches: ["ci-exp/crane-base"]
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.m.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: m
+        run: |
+          defs='{
+            "A":    {"arm":"A",    "mode":"full",  "toolchain":"stable"},
+            "A2":   {"arm":"A2",   "mode":"full",  "toolchain":"stable"},
+            "Apin": {"arm":"Apin", "mode":"full",  "toolchain":"1.91.0"},
+            "Asub": {"arm":"Asub", "mode":"sub",   "toolchain":"1.91.0"},
+            "B1":   {"arm":"B1",   "mode":"crane", "toolchain":"nix"}
+          }'
+          inc=$(jq -c --argjson d "$defs" '[.[] | $d[.]]' .github/crane-arms.json)
+          echo "matrix={\"include\":$inc}" >> "$GITHUB_OUTPUT"
+          echo "arms: $inc"
+
+  mac:
+    name: mac ${{ matrix.arm }}
+    needs: plan
+    runs-on: macos-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Record environment
+        run: |
+          echo "ARM=${{ matrix.arm }} MODE=${{ matrix.mode }} EVENT=${{ github.event_name }}"
+          echo "ImageOS=${ImageOS:-} ImageVersion=${ImageVersion:-}"
+          sw_vers || true
+          uname -m
+          echo "runner rustc: $(rustc -V 2>&1)"
+        shell: bash
+
+      # ---- arms A, A2, Apin, Asub: rust-cache -------------------------------
+      - name: Install Rust toolchain
+        if: matrix.mode != 'crane'
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          cache: false
+          toolchain: ${{ matrix.toolchain }}
+          target: wasm32-wasip2
+          components: clippy, rustfmt
+
+      - name: Install dependencies
+        if: matrix.mode != 'crane'
+        run: |
+          brew install nushell protobuf
+          chmod +x scripts/test-pure-rust.nu
+
+      - name: Setup Rust cache
+        if: matrix.mode != 'crane'
+        uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: ${{ runner.os }}-pureRust-checks-v2-${{ matrix.arm }}
+
+      - name: Toolchain in use
+        if: matrix.mode != 'crane'
+        run: |
+          echo "CI=true" >> "$GITHUB_ENV"
+          echo "build rustc: $(rustc -V)"
+        shell: bash
+
+      - name: Check hiroz-msgs feature flags
+        if: matrix.mode == 'full'
+        run: nu scripts/test-pure-rust.nu check-bundled-msgs
+        shell: bash
+
+      - name: Check hu (hiroz-union)
+        if: matrix.mode == 'full'
+        run: nu scripts/test-pure-rust.nu check-hu
+        shell: bash
+
+      - name: hu packages and runs on macOS
+        if: matrix.mode == 'full'
+        run: |
+          set -e
+          nu scripts/build-hu-release.nu --binary-only --no-sums --out mac-dist
+          ls -l mac-dist
+          HUHOME="$RUNNER_TEMP/huhome-mac"
+          mkdir -p "$HUHOME/.local/bin"
+          tar -xzf mac-dist/hu-*-aarch64-apple-darwin.tar.gz -C "$HUHOME/.local/bin" hu
+          got=$(HOME="$HUHOME" "$HUHOME/.local/bin/hu" --version)
+          echo "macOS build reports: $got"
+          case "$got" in "hu "*) ;; *) echo "FAIL: no version from the macOS binary"; exit 1 ;; esac
+        shell: bash
+
+      - name: Check all examples
+        if: matrix.mode == 'full'
+        run: nu scripts/test-pure-rust.nu check-examples
+        shell: bash
+
+      - name: Check rustdoc links
+        if: matrix.mode == 'full'
+        run: nu scripts/test-pure-rust.nu check-rustdoc-links
+        shell: bash
+
+      - name: Check distro feature flags
+        if: matrix.mode == 'full'
+        run: nu scripts/test-pure-rust.nu check-distro-features
+        shell: bash
+
+      - name: Clippy (hiroz-py)
+        if: matrix.mode == 'full'
+        run: nu scripts/test-pure-rust.nu clippy-hiroz-py
+        shell: bash
+
+      - name: Clippy (hiroz-tests, interop features)
+        if: matrix.mode == 'full'
+        run: nu scripts/test-pure-rust.nu clippy-tests
+        shell: bash
+
+      # Same two clippy commands as the crane checks, without Nix.
+      - name: Clippy workspace (sub)
+        if: matrix.mode == 'sub'
+        run: >-
+          cargo clippy --locked --workspace --exclude rmw-zenoh-rs --exclude hiroz-py
+          --exclude hiroz-tests --all-targets -- -D warnings
+        shell: bash
+
+      - name: Clippy hiroz-union (sub)
+        if: matrix.mode == 'sub'
+        run: cargo clippy --locked -p hiroz-union --features web-plugins --all-targets -- -D warnings
+        shell: bash
+
+      # ---- arm B1: crane checks, magic-nix-cache ------------------------------
+      - name: Install Nix
+        if: matrix.mode == 'crane'
+        uses: cachix/install-nix-action@v31
+
+      - name: Magic Nix Cache
+        if: matrix.mode == 'crane'
+        uses: DeterminateSystems/magic-nix-cache-action@v15
+        with:
+          use-gha-cache: enabled
+          use-flakehub: disabled
+          diagnostic-endpoint: ""
+
+      - name: Nix versions
+        if: matrix.mode == 'crane'
+        run: |
+          nix --version
+          nix eval --raw .#checks.aarch64-darwin.crane-deps-ws.drvPath; echo
+          D=$(nix eval --raw .#checks.aarch64-darwin.crane-deps-ws.drvPath)
+          nix-store -qR "$D" | grep -E 'rust-default|rustc' | head -3 || true
+        shell: bash
+
+      - name: crane deps (workspace and hu)
+        if: matrix.mode == 'crane'
+        run: |
+          set -uo pipefail
+          T=.#checks.aarch64-darwin
+          nix build "$T.crane-deps-ws" "$T.crane-deps-hu" \
+            -L --no-link --print-out-paths > deps-out.txt 2> deps.log; rc=$?
+          tail -n 40 deps.log
+          echo "DEPS_RC=$rc"
+          echo "DEPS_OUT=$(tr '\n' ' ' < deps-out.txt)"
+          echo "DEPS_BUILDING=$(grep -c "^building '.*-deps-.*\.drv'" deps.log)"
+          echo "DEPS_COPY_DEPS=$(grep -c "^copying path '.*-deps-.*' from" deps.log)"
+          echo "COPY_ALL=$(grep -c "^copying path '" deps.log)"
+          while read -r o; do [ -n "$o" ] && nix path-info -sS "$o"; done < deps-out.txt
+          exit $rc
+        shell: bash
+
+      - name: crane clippy (workspace and hu)
+        if: matrix.mode == 'crane'
+        run: |
+          set -uo pipefail
+          T=.#checks.aarch64-darwin
+          nix build "$T.crane-clippy-ws" "$T.crane-clippy-hu" \
+            -L --no-link --print-out-paths > clippy-out.txt 2> clippy.log; rc=$?
+          tail -n 40 clippy.log
+          echo "CLIPPY_RC=$rc"
+          echo "CLIPPY_BUILDING=$(grep -c "^building '.*-clippy-.*\.drv'" clippy.log)"
+          echo "CLIPPY_COPY=$(grep -c "^copying path '.*-clippy-.*' from" clippy.log)"
+          echo "COPY_ALL=$(grep -c "^copying path '" clippy.log)"
+          exit $rc
+        shell: bash
