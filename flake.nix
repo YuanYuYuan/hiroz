@@ -457,6 +457,13 @@
               ];
               # The CI jobs compile the dev profile; crane defaults to release.
               CARGO_PROFILE = "dev";
+              # hiroz-tests has only tests/ and a build script; the dummy source
+              # drops tests/, which leaves a manifest with no targets and breaks
+              # workspace loading.
+              extraDummyScript = ''
+                mkdir -p $out/crates/hiroz-tests/src
+                touch $out/crates/hiroz-tests/src/lib.rs
+              '';
             };
             craneWs = craneCommon // {
               cargoExtraArgs = "--locked --workspace --exclude rmw-zenoh-rs --exclude hiroz-py --exclude hiroz-tests";
