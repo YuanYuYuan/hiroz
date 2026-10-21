@@ -181,6 +181,8 @@ jobs:
           echo "DEPS_BUILDING=$(grep -c "^building '.*-deps-.*\.drv'" deps.log)"
           echo "DEPS_COPY_DEPS=$(grep -c "^copying path '.*-deps-.*' from" deps.log)"
           echo "COPY_ALL=$(grep -c "^copying path '" deps.log)"
+          echo "COPY_FROM:"
+          grep -o "^copying path '[^']*' from '[^']*'" deps.log | sed "s/.* from //" | sort | uniq -c
           while read -r o; do [ -n "$o" ] && nix path-info -sS "$o"; done < deps-out.txt
           exit $rc
         shell: bash
@@ -197,5 +199,21 @@ jobs:
           echo "CLIPPY_BUILDING=$(grep -c "^building '.*-clippy-.*\.drv'" clippy.log)"
           echo "CLIPPY_COPY=$(grep -c "^copying path '.*-clippy-.*' from" clippy.log)"
           echo "COPY_ALL=$(grep -c "^copying path '" clippy.log)"
+          echo "COPY_FROM:"
+          grep -o "^copying path '[^']*' from '[^']*'" clippy.log | sed "s/.* from //" | sort | uniq -c
           exit $rc
+        shell: bash
+
+      - name: Magic Nix Cache daemon log
+        if: always() && matrix.mode == 'crane'
+        run: |
+          echo "daemon dir: ${MAGIC_NIX_CACHE_DAEMONDIR:-unset}"
+          ls -la "${MAGIC_NIX_CACHE_DAEMONDIR:-/nonexistent}" 2>&1 | head -20
+          for f in "${MAGIC_NIX_CACHE_DAEMONDIR:-/nonexistent}"/*.log; do
+            [ -f "$f" ] || continue
+            echo "== $f"; wc -l "$f"
+            echo "UPLOAD_LINES=$(grep -ci upload "$f")"
+            echo "FAIL_LINES=$(grep -ciE 'error|fail|429|rate' "$f")"
+            grep -iE "upload|error|fail|429|rate|narinfo" "$f" | sed 's/\x1b\[[0-9;]*m//g' | head -n 40
+          done
         shell: bash
