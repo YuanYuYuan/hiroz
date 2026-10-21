@@ -171,7 +171,7 @@ jobs:
       - name: crane deps (workspace and hu)
         if: matrix.mode == 'crane'
         run: |
-          set -uo pipefail
+          set +e
           T=.#checks.aarch64-darwin
           nix build "$T.crane-deps-ws" "$T.crane-deps-hu" \
             -L --no-link --print-out-paths > deps-out.txt 2> deps.log; rc=$?
@@ -188,7 +188,7 @@ jobs:
       - name: crane clippy (workspace and hu)
         if: matrix.mode == 'crane'
         run: |
-          set -uo pipefail
+          set +e
           T=.#checks.aarch64-darwin
           nix build "$T.crane-clippy-ws" "$T.crane-clippy-hu" \
             -L --no-link --print-out-paths > clippy-out.txt 2> clippy.log; rc=$?
