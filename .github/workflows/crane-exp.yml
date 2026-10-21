@@ -5,7 +5,7 @@ name: crane-exp
 
 on:
   push:
-    branches: ["ci-exp/crane-base", "ci-exp/crane-smoke"]
+    branches: ["ci-exp/crane-base"]
   pull_request:
     branches: ["ci-exp/crane-base"]
 
@@ -137,13 +137,13 @@ jobs:
       - name: Clippy workspace (sub)
         if: matrix.mode == 'sub'
         run: >-
-          cargo clippy --locked --workspace --exclude rmw-zenoh-rs --exclude hiroz-py
+          cargo clippy --workspace --exclude rmw-zenoh-rs --exclude hiroz-py
           --exclude hiroz-tests --all-targets -- -D warnings
         shell: bash
 
       - name: Clippy hiroz-union (sub)
         if: matrix.mode == 'sub'
-        run: cargo clippy --locked -p hiroz-union --features web-plugins --all-targets -- -D warnings
+        run: cargo clippy -p hiroz-union --features web-plugins --all-targets -- -D warnings
         shell: bash
 
       # ---- arm B1: crane checks, magic-nix-cache ------------------------------

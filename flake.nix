@@ -457,6 +457,8 @@
               ];
               # The CI jobs compile the dev profile; crane defaults to release.
               CARGO_PROFILE = "dev";
+              # No --locked: the committed Cargo.lock lacks three hiroz-schema
+              # edges, so cargo has to rewrite it (offline, path dependencies only).
               # hiroz-tests has only tests/ and a build script; the dummy source
               # drops tests/, which leaves a manifest with no targets and breaks
               # workspace loading.
@@ -466,10 +468,10 @@
               '';
             };
             craneWs = craneCommon // {
-              cargoExtraArgs = "--locked --workspace --exclude rmw-zenoh-rs --exclude hiroz-py --exclude hiroz-tests";
+              cargoExtraArgs = "--workspace --exclude rmw-zenoh-rs --exclude hiroz-py --exclude hiroz-tests";
             };
             craneHu = craneCommon // {
-              cargoExtraArgs = "--locked -p hiroz-union --features web-plugins";
+              cargoExtraArgs = "-p hiroz-union --features web-plugins";
             };
             craneWsDeps = craneLib.buildDepsOnly craneWs;
             craneHuDeps = craneLib.buildDepsOnly craneHu;
