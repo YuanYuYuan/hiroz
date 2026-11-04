@@ -6,7 +6,7 @@ name: PR Draft Check
 
 on:
   pull_request:
-    types: [opened, reopened, ready_for_review, synchronize]
+    types: [opened, reopened, ready_for_review, converted_to_draft, synchronize]
     branches: [main]
   pull_request_review:
     types: [submitted]
