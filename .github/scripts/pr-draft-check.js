@@ -6,8 +6,8 @@
 // pull request field from `context.payload` and never evaluates one, so a
 // hostile title, branch name or body is only ever data.
 
-const TRUSTED_ASSOCIATIONS = ['OWNER', 'MEMBER', 'COLLABORATOR'];
-const WELCOME_ASSOCIATIONS = ['FIRST_TIME_CONTRIBUTOR', 'NONE'];
+const TRUSTED_ASSOCIATIONS = []; // LIVE TEST ONLY: owner counts as external
+const WELCOME_ASSOCIATIONS = ['FIRST_TIME_CONTRIBUTOR', 'NONE', 'OWNER'];
 
 const WARNING_MARKER = 'External contributor PRs should be opened as DRAFT';
 const WELCOME_MARKER = 'Welcome to hiroz!';
