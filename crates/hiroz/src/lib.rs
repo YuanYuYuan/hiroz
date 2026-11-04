@@ -43,6 +43,7 @@
 pub mod action;
 /// Attachment helpers for carrying metadata alongside messages.
 pub mod attachment;
+mod buffer_group;
 /// Timestamp-indexed, capacity-bounded message cache.
 pub mod cache;
 mod common;
@@ -69,6 +70,7 @@ pub mod lifecycle;
 pub mod msg;
 /// ROS 2 node creation and management.
 pub mod node;
+mod options;
 /// Convenience re-exports for common hiroz types.
 pub mod prelude;
 /// Publishers and subscribers.
@@ -105,8 +107,10 @@ pub mod utils;
 pub mod parameter;
 
 pub use attachment::GidArray;
+pub use buffer_group::BufferGroup;
 pub use entity::{TypeHash, TypeInfo};
 pub use hiroz_derive::MessageTypeInfo;
+pub use options::SubscriberOptions;
 pub use ros_msg::{ActionTypeInfo, MessageTypeInfo, ServiceTypeInfo, WithTypeInfo};
 pub use zbuf::ZBuf;
 pub use zenoh::Result;
